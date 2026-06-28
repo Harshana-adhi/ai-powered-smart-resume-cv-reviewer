@@ -33,12 +33,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Section 10 risk: scanned/image PDF with no extractable text
-    if (resumeText.length === 0) {
+   // OCR fallback already attempted inside extractTextFromPdf.
+    // If we still have nothing meaningful, give up gracefully.
+    if (resumeText.trim().length < 20) {
       return NextResponse.json(
         {
           error:
-            "This looks like a scanned PDF with no extractable text. Please paste the text instead.",
+            "We couldn't extract readable text from this PDF, even with OCR. Please paste your resume text instead.",
         },
         { status: 400 }
       );
