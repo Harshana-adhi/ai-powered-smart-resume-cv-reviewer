@@ -16,7 +16,7 @@ export default function ResultsView({ feedback, onReset }: ResultsViewProps) {
   const { overall_score, categories, summary } = feedback;
 
   return (
-    <div className="w-full max-w-3xl mx-auto animate-in fade-in duration-300">
+   <div className="w-full max-w-3xl mx-auto animate-in fade-in duration-300">
       {/* Overall score */}
       <div className="text-center mb-6">
         <p className="text-sm text-gray-500 mb-1">Overall Score</p>
