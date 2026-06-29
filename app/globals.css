@@ -1,9 +1,17 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
 @plugin "tailwindcss-animate";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0b0e14;
+  --surface: #141923;
+  --surface-hover: #1a2030;
+  --border-subtle: #232b38;
+  --foreground: #e8ecf1;
+  --muted: #8b95a3;
+  --accent: #f2a93b;
+  --accent-hover: #ffbe5c;
 }
 
 @theme inline {
@@ -11,17 +19,11 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-serif: var(--font-source-serif);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }

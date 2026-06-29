@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { extractTextFromPdf, FileValidationError } from "@/lib/extractText";
 import { buildPrompt } from "@/lib/buildPrompt";
-import { ResumeFeedbackSchema } from "@/lib/schema";
+import { AiResponseSchema } from "@/lib/schema";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -33,16 +33,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-   // OCR fallback already attempted inside extractTextFromPdf.
-    // If we still have nothing meaningful, give up gracefully.
+    // Guard against near-empty input. Message differs depending on source
+    // (PDF extraction/OCR failure vs. just a too-short pasted snippet).
     if (resumeText.trim().length < 20) {
-      return NextResponse.json(
-        {
-          error:
-            "We couldn't extract readable text from this PDF, even with OCR. Please paste your resume text instead.",
-        },
-        { status: 400 }
-      );
+      const message = file
+        ? "We couldn't extract readable text from this PDF, even with OCR. Please paste your resume text instead."
+        : "That doesn't look like enough text to review. Please paste your full resume content.";
+
+      return NextResponse.json({ error: message }, { status: 400 });
     }
 
     // FR5: send to LLM with structured prompt
@@ -56,7 +54,6 @@ export async function POST(req: NextRequest) {
         temperature: 0.3,
       });
     } catch (err) {
-      // NFR-4: handle rate limits / API errors gracefully
       console.error("Groq API error:", err);
       return NextResponse.json(
         { error: "The AI service is temporarily unavailable. Please try again shortly." },
@@ -78,16 +75,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = ResumeFeedbackSchema.safeParse(parsedJson);
+    const result = AiResponseSchema.safeParse(parsedJson);
     if (!result.success) {
-      console.error("AI response failed schema validation:", result.error.issues);
+      console.error(
+        "AI response failed schema validation:",
+        JSON.stringify(result.error.issues, null, 2)
+      );
+      console.error("Raw AI response was:", rawText);
       return NextResponse.json(
         { error: "AI returned an unexpected response shape. Please try again." },
         { status: 502 }
       );
     }
 
-    // Validated, fully typed ResumeFeedback object
+    if (!result.data.is_resume) {
+      return NextResponse.json(
+        { error: `This doesn't look like a resume or CV. ${result.data.reason}` },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(result.data, { status: 200 });
   } catch (err) {
     console.error("Unexpected error in /api/analyze:", err);
